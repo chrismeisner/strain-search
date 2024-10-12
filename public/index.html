@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car History Search</title>
+  <script>
+	async function submitPrompt() {
+	  const inputField = document.getElementById('carInput').value;
+	  const prompt = `Tell me the history of the car, ${inputField}, in under 200 words`;
+
+	  console.log("🚗 User Input:", inputField);
+	  console.log("✍️ Constructed Prompt:", prompt);
+
+	  const responseDiv = document.getElementById('response');
+	  responseDiv.innerHTML = 'Loading... ⏳';
+
+	  try {
+		console.log("📡 Sending request to /api/chat...");
+		const res = await fetch('/api/chat', {
+		  method: 'POST',
+		  headers: {
+			'Content-Type': 'application/json',
+		  },
+		  body: JSON.stringify({ prompt }),
+		});
+
+		console.log("📥 Received response from /api/chat");
+		const data = await res.json();
+		console.log("✅ API Response Data:", data);
+
+		responseDiv.innerHTML = data.response || 'No response received. 🤷‍♂️';
+	  } catch (error) {
+		console.error("❌ Error during API call:", error.message);
+		responseDiv.innerHTML = 'Error: ' + error.message + ' 🚨';
+	  }
+	}
+  </script>
+</head>
+<body>
+  <h1>Car History Search 🏎️</h1>
+  <input type="text" id="carInput" placeholder="Enter year, maker, and model">
+  <button onclick="submitPrompt()">Submit</button>
+  <div id="response" style="margin-top: 20px;"></div>
+</body>
+</html>
