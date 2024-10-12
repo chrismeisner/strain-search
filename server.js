@@ -49,6 +49,7 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
-  console.log(`🚀 Strain Search app running on http://localhost:${PORT}`);
-});
+app.listen(process.env.PORT || 3000, () =>
+  console.log(`🚀 Strain Search app running...`)
+);
+
