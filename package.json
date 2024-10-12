@@ -1,0 +1,19 @@
+{
+  "name": "strain-search",
+  "version": "1.0.0",
+  "description": "A simple web app to search strains, deployed on Heroku",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "strain",
+    "search",
+    "heroku"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
