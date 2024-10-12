@@ -5,9 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",  // For local development with automatic restarts
-    "build": "npm install",      // Ensures dependencies are installed
-    "heroku-postbuild": "npm install" // Ensures dependencies are installed after Heroku build
+    "dev": "nodemon server.js",
+    "build": "npm install",
+    "heroku-postbuild": "npm install"
   },
   "keywords": [
     "strain",
@@ -19,13 +19,13 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.21.1",
-    "axios": "^1.4.0",  // Ensure axios is listed since it is used in server.js
-    "dotenv": "^16.1.4" // Ensure dotenv is included for environment variables
+    "axios": "^1.4.0",
+    "dotenv": "^16.1.4"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22" // For easier local development
+    "nodemon": "^2.0.22"
   },
   "engines": {
-    "node": ">=14.x"  // Specify Node version compatibility (Heroku uses this)
+    "node": ">=14.x"
   }
 }
