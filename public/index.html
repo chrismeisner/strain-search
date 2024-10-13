@@ -6,6 +6,7 @@
   <title>Cannabis Strain Explorer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+	// Function to submit the prompt
 	async function submitPrompt() {
 	  const inputField = document.getElementById('strainInput').value.trim();
 	  if (!inputField) {
@@ -14,7 +15,7 @@
 	  }
 
 	  const prompt = `Find detailed information about the cannabis strain, ${inputField}, including:
-	  
+
 1. Popularity (how common or rare is it?)
 2. Genetics (parent strains if any)
 3. Category (Indica, Sativa, Hybrid, etc.)
@@ -30,7 +31,6 @@
 	  responseDiv.innerHTML = 'Loading... ⏳';
 
 	  try {
-		// Send both user input and prompt to the backend
 		const res = await fetch('/api/chat', {
 		  method: 'POST',
 		  headers: { 'Content-Type': 'application/json' },
@@ -52,6 +52,15 @@
 	  }
 	}
 
+	// Detect the Enter key press and submit the form
+	function handleKeyPress(event) {
+	  if (event.key === 'Enter') {
+		event.preventDefault(); // Prevent the default form submission
+		submitPrompt(); // Trigger the same function as the button click
+	  }
+	}
+
+	// Function to parse the response
 	function parseResponse(responseText) {
 	  console.log("🛠️ Parsing Response...");
 	  const data = {};
@@ -90,6 +99,7 @@
 	  return data;
 	}
 
+	// Function to display the parsed data
 	function displayParsedData(parsedData) {
 	  const parsedDiv = document.getElementById('parsed-data');
 	  parsedDiv.innerHTML = `
@@ -112,7 +122,8 @@
   <p class="text-center max-w-md mb-6">Enter a cannabis strain name below to explore detailed insights about its category, effects, and more.</p>
   <div class="w-full max-w-md">
 	<input id="strainInput" type="text" placeholder="Enter strain name (e.g., Durban Poison)"
-	  class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400">
+	  class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400"
+	  onkeydown="handleKeyPress(event)">
 	<button onclick="submitPrompt()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition">
 	  Search
 	</button>
