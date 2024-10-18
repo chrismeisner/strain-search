@@ -17,23 +17,18 @@
 		return;
 	  }
 
-	  // Construct the prompt with detailed instructions for each data point, requesting JSON format
-	  let prompt = `Provide detailed information about the cannabis strain, ${inputField}, in JSON format with the following fields:
-	  {
-		"popularity": "How widely known and used is this strain? Include specific regions where it's most popular, if relevant.",
-		"genetics": "Describe the lineage and heritage of the strain, including any crossbreeding with other strains. If possible, include parent strains.",
-		"category": "Is the strain classified as Indica, Sativa, or Hybrid?",
-		"category_percentage": "Provide the exact breakdown of the strain's Indica and Sativa percentages.",
-		"effects": {
-		  "positive": "List the positive effects users experience with this strain, using emojis where appropriate.",
-		  "negative": "List the negative effects users may experience."
-		},
-		"terpenes": "Describe the main terpenes present in the strain and how they influence its flavor, smell, and potential effects.",
-		"notes": "Mention any notable aspects of the strain, such as growing conditions, unique features, or special cultivation notes.",
-		"description": "Provide a general description of the strain, its characteristics, and its usage in the tone of ${toneField}.",
-		"alternative_names": "List any alternative or street names this strain is known by.",
-		"confidence": "Rate the confidence level in the accuracy of the provided information."
-	  }`;
+	  // Construct the prompt with detailed instructions for each data point
+	  let prompt = `Provide detailed information about the cannabis strain, ${inputField}. Include the following fields:
+	  - Popularity: How widely known and used is this strain? Include specific regions where it's most popular, if relevant.
+	  - Genetics: Describe the lineage and heritage of the strain, including any crossbreeding with other strains. If possible, include parent strains.
+	  - Category: Is the strain classified as Indica, Sativa, or Hybrid?
+	  - Category Percentage: Provide the exact breakdown of the strain's Indica and Sativa percentages.
+	  - Effects: List the common effects users experience with this strain, including both positive and negative effects, with emoji representations.
+	  - Terpenes: Describe the main terpenes present in the strain and how they influence its flavor, smell, and potential effects.
+	  - Notes: Mention any notable aspects of the strain, such as growing conditions, unique features, or special cultivation notes.
+	  - Description: Provide a general description of the strain, its characteristics, and its usage. Write this in the tone of ${toneField}.
+	  - Alternative Names: List any alternative or street names this strain is known by.
+	  - Confidence Score: Rate the confidence level in the accuracy of the provided information.`;
 
 	  // If user provided genetics information, add it to the prompt
 	  if (geneticsField) {
@@ -69,14 +64,46 @@
 
 	// Function to parse the response
 	function parseResponse(responseText) {
-	  try {
-		// Parse the response as JSON
-		const parsedData = JSON.parse(responseText);
-		return parsedData;
-	  } catch (error) {
-		console.error("Error parsing JSON:", error);
-		return { error: "Failed to parse the response." };
-	  }
+	  const parsedData = {
+		popularity: extractSection(responseText, 'Popularity'),
+		genetics: extractSection(responseText, 'Genetics'),
+		category: extractSection(responseText, 'Category'),
+		category_percentage: extractSection(responseText, 'Category Percentage'),
+		effects: extractEffectsSection(responseText),
+		terpenes: extractSection(responseText, 'Terpenes'),
+		notes: extractSection(responseText, 'Notes'),
+		description: extractSection(responseText, 'Description'),
+		alternative_names: extractSection(responseText, 'Alternative Names'),
+		confidence: extractSection(responseText, 'Confidence Score')
+	  };
+
+	  return parsedData;
+	}
+
+	// Utility function to extract sections from the text
+	function extractSection(text, sectionName) {
+	  const regex = new RegExp(`####\\s*${sectionName}\\s*\\n([^#]+)`, 'i');
+	  const match = text.match(regex);
+	  return match ? match[1].trim() : 'N/A';
+	}
+
+	// Utility function to handle effects extraction
+	function extractEffectsSection(text) {
+	  const regex = new RegExp(`####\\s*Effects\\s*\\n([\\s\\S]+?)(?=####|$)`, 'i');
+	  const match = text.match(regex);
+	  if (!match) return 'N/A';
+
+	  // Separate positive and negative effects
+	  const positiveRegex = /- Positive:\n([\s\S]+?)(?=\n- Negative:|\n####|$)/;
+	  const negativeRegex = /- Negative:\n([\s\S]+?)(?=\n####|$)/;
+
+	  const positiveMatch = match[1].match(positiveRegex);
+	  const negativeMatch = match[1].match(negativeRegex);
+
+	  return {
+		positive: positiveMatch ? positiveMatch[1].trim() : 'N/A',
+		negative: negativeMatch ? negativeMatch[1].trim() : 'N/A'
+	  };
 	}
 
 	// Function to display the parsed data on the page
@@ -88,38 +115,17 @@
 		return;
 	  }
 
-	  // Convert arrays into list items
-	  const effectsPositive = parsedData.effects.positive.map(effect => `<li>${effect}</li>`).join("");
-	  const effectsNegative = parsedData.effects.negative.map(effect => `<li>${effect}</li>`).join("");
-
-	  // Convert category percentages
-	  const categoryPercentages = `Indica: ${parsedData.category_percentage.Indica}%, Sativa: ${parsedData.category_percentage.Sativa}%`;
-
-	  // Convert alternative names to list items
-	  const alternativeNames = parsedData.alternative_names.map(name => `<li>${name}</li>`).join("");
-
 	  parsedDiv.innerHTML = `
 		<h3 class="text-lg font-semibold mt-4">Parsed Data</h3>
 		<p><span class="font-semibold">Popularity:</span> ${parsedData.popularity}</p>
 		<p><span class="font-semibold">Genetics:</span> ${parsedData.genetics}</p>
 		<p><span class="font-semibold">Category:</span> ${parsedData.category}</p>
-		<p><span class="font-semibold">Category Percentage:</span> ${categoryPercentages}</p>
-		<p><span class="font-semibold">Effects:</span> 
-			<ul>
-			  <li><strong>Positive:</strong></li>
-			  ${effectsPositive}
-			  <li><strong>Negative:</strong></li>
-			  ${effectsNegative}
-			</ul>
-		</p>
+		<p><span class="font-semibold">Category Percentage:</span> ${parsedData.category_percentage}</p>
+		<p><span class="font-semibold">Effects:</span> Positive: ${parsedData.effects.positive}, Negative: ${parsedData.effects.negative}</p>
 		<p><span class="font-semibold">Terpenes:</span> ${parsedData.terpenes}</p>
 		<p><span class="font-semibold">Notes:</span> ${parsedData.notes}</p>
 		<p><span class="font-semibold">Description:</span> ${parsedData.description}</p>
-		<p><span class="font-semibold">Alternative Names:</span>
-			<ul>
-			  ${alternativeNames}
-			</ul>
-		</p>
+		<p><span class="font-semibold">Alternative Names:</span> ${parsedData.alternative_names}</p>
 		<p><span class="font-semibold">Confidence Score:</span> ${parsedData.confidence}</p>`;
 	}
 
@@ -149,10 +155,15 @@
 	  class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400">
   </div>
 
-  <!-- Tone selection dropdown (only Greg is available) -->
+  <!-- Tone selection dropdown -->
   <div class="w-full max-w-md mb-4">
 	<select id="toneSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400">
-	  <option value="Greg">Greg</option>
+	  <option value="Cheech and Chong">Cheech and Chong</option>
+	  <option value="Snoop Dog">Snoop Dog</option>
+	  <option value="Friendly and Knowledgable Bud-Tender, specialing in communicating with the casual cannabis user">Budtender</option>
+	  <option value="Valley Girl inspired by Paris Hilton">Valley Girl</option>
+	  <option value="A mystical Gnome who speeaks in rhymes and riddles">Gnome</option>
+
 	</select>
   </div>
 
