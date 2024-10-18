@@ -6,26 +6,36 @@
   <title>Cannabis Strain Explorer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-	// Function to submit the prompt
+	// Function to submit the prompt and receive the data
 	async function submitPrompt() {
 	  const inputField = document.getElementById('strainInput').value.trim();
+	  const geneticsField = document.getElementById('geneticsInput').value.trim(); // New genetics input
+
 	  if (!inputField) {
 		alert('Please enter a strain name! 🌿');
 		return;
 	  }
 
-	  const prompt = `Find detailed information about the cannabis strain, ${inputField}, including:
+	  // Construct the prompt
+	  let prompt = `Provide detailed information about the cannabis strain, ${inputField}, including:
 
-1. Popularity (how common or rare is it?)
-2. Genetics (parent strains if any)
-3. Category (Indica, Sativa, Hybrid, etc.)
-4. Effects with emojis (1-3 per effect) and short blurbs
-5. Growing information
-6. Terpenes (bullet points)
-7. Notes (Lemon, Wood, Berry, etc.) with emojis
-8. 40-word description
-9. Alternative names (3-5 similar options)
-10. Confidence score between 1-100 (how reliable the data is)`;
+	  {
+		"popularity": "...",
+		"genetics": "...",
+		"category": "...",
+		"category_percentage": {"indica": "...", "sativa": "..."},
+		"effects": [{"emoji": "...", "description": "..."}, ...],
+		"terpenes": [...],
+		"notes": [...],
+		"description": "...",
+		"alternative_names": [...],
+		"confidence": "..."
+	  }`;
+
+	  // If user provided genetics information, add it to the prompt
+	  if (geneticsField) {
+		prompt += ` The genetics information for the strain is as follows: ${geneticsField}.`;
+	  }
 
 	  const responseDiv = document.getElementById('response');
 	  responseDiv.innerHTML = 'Loading... ⏳';
@@ -41,9 +51,11 @@
 		const fullResponse = data.response;
 		console.log("🔍 Full Response from API:", fullResponse);
 
-		responseDiv.innerHTML = `<h3 class="text-lg font-semibold">Full Response</h3>
-		  <p class="whitespace-pre-line">${fullResponse}</p>`;
+		// Display the full raw response before parsing
+		responseDiv.innerHTML = `<h3 class="text-lg font-semibold">Full Raw Response</h3>
+		  <pre class="whitespace-pre-line bg-gray-100 p-4 rounded">${fullResponse}</pre>`;
 
+		// Parse and display the parsed data
 		const parsedData = parseResponse(fullResponse);
 		displayParsedData(parsedData);
 	  } catch (error) {
@@ -52,83 +64,77 @@
 	  }
 	}
 
-	// Detect the Enter key press and submit the form
-	function handleKeyPress(event) {
-	  if (event.key === 'Enter') {
-		event.preventDefault(); // Prevent the default form submission
-		submitPrompt(); // Trigger the same function as the button click
+	// Function to parse the response
+	function parseResponse(responseText) {
+	  try {
+		// Assuming responseText is a JSON-like string
+		const parsedData = JSON.parse(responseText);
+
+		console.log("🛠️ Parsed Data:", parsedData);
+		return parsedData;
+	  } catch (error) {
+		console.error("❌ Error parsing the response:", error);
+		return { error: "Error parsing the data." };
 	  }
 	}
 
-	// Function to parse the response
-	function parseResponse(responseText) {
-	  console.log("🛠️ Parsing Response...");
-	  const data = {};
-
-	  data.popularity = responseText.match(/Popularity:\s*(.+)/i)?.[1] || 'N/A';
-	  console.log("🟢 Popularity:", data.popularity);
-
-	  data.genetics = responseText.match(/Genetics:\s*(.+)/i)?.[1] || 'N/A';
-	  console.log("🟢 Genetics:", data.genetics);
-
-	  data.category = responseText.match(/Category:\s*(.+)/i)?.[1] || 'N/A';
-	  console.log("🟢 Category:", data.category);
-
-	  data.effects = responseText.match(/Effects:\s*([\s\S]*?)\n\n/i)?.[1] || 'N/A';
-	  console.log("🟢 Effects:", data.effects);
-
-	  data.growingInfo = responseText.match(/Growing Information:\s*([\s\S]*?)\n\n/i)?.[1] || 'N/A';
-	  console.log("🟢 Growing Information:", data.growingInfo);
-
-	  data.terpenes = responseText.match(/Terpenes:\s*([\s\S]*?)\n\n/i)?.[1] || 'N/A';
-	  console.log("🟢 Terpenes:", data.terpenes);
-
-	  data.notes = responseText.match(/Notes:\s*([\s\S]*?)\n\n/i)?.[1] || 'N/A';
-	  console.log("🟢 Notes:", data.notes);
-
-	  data.description = responseText.match(/40-word Description:\s*(.+)/i)?.[1] || 'N/A';
-	  console.log("🟢 40-word Description:", data.description);
-
-	  data.altNames = responseText.match(/Alternative Names:\s*([\s\S]*?)\n\n/i)?.[1] || 'N/A';
-	  console.log("🟢 Alternative Names:", data.altNames);
-
-	  data.confidence = responseText.match(/Confidence Score:\s*(.+)/i)?.[1] || 'N/A';
-	  console.log("🟢 Confidence Score:", data.confidence);
-
-	  console.log("✅ Parsing Completed:", data);
-	  return data;
-	}
-
-	// Function to display the parsed data
+	// Function to display the parsed data on the page
 	function displayParsedData(parsedData) {
 	  const parsedDiv = document.getElementById('parsed-data');
+	  if (parsedData.error) {
+		parsedDiv.innerHTML = `<p class="text-red-500">${parsedData.error}</p>`;
+		return;
+	  }
+
 	  parsedDiv.innerHTML = `
 		<h3 class="text-lg font-semibold mt-4">Parsed Data</h3>
 		<p><span class="font-semibold">Popularity:</span> ${parsedData.popularity}</p>
 		<p><span class="font-semibold">Genetics:</span> ${parsedData.genetics}</p>
 		<p><span class="font-semibold">Category:</span> ${parsedData.category}</p>
-		<p><span class="font-semibold">Effects:</span><br>${parsedData.effects.replace(/\n/g, '<br>')}</p>
-		<p><span class="font-semibold">Growing Information:</span><br>${parsedData.growingInfo.replace(/\n/g, '<br>')}</p>
-		<p><span class="font-semibold">Terpenes:</span><br>${parsedData.terpenes.replace(/\n/g, '<br>')}</p>
-		<p><span class="font-semibold">Notes:</span><br>${parsedData.notes.replace(/\n/g, '<br>')}</p>
-		<p><span class="font-semibold">40-word Description:</span> ${parsedData.description}</p>
-		<p><span class="font-semibold">Alternative Names:</span><br>${parsedData.altNames.replace(/\n/g, '<br>')}</p>
+		<p><span class="font-semibold">Indica Percentage:</span> ${parsedData.category_percentage.indica}%</p>
+		<p><span class="font-semibold">Sativa Percentage:</span> ${parsedData.category_percentage.sativa}%</p>
+		<p><span class="font-semibold">Effects:</span><br>${parsedData.effects.map(effect => `${effect.emoji} ${effect.description}`).join('<br>')}</p>
+		<p><span class="font-semibold">Terpenes:</span> ${parsedData.terpenes.join(', ')}</p>
+		<p><span class="font-semibold">Notes:</span> ${parsedData.notes.join(', ')}</p>
+		<p><span class="font-semibold">Description:</span> ${parsedData.description}</p>
+		<p><span class="font-semibold">Alternative Names:</span> ${parsedData.alternative_names.join(', ')}</p>
 		<p><span class="font-semibold">Confidence Score:</span> ${parsedData.confidence}</p>`;
+	}
+
+	// Detect the Enter key press and submit the form
+	function handleKeyPress(event) {
+	  if (event.key === 'Enter') {
+		event.preventDefault(); // Prevent default form submission
+		submitPrompt(); // Trigger the same function as the button click
+	  }
 	}
   </script>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col items-center p-4">
   <h1 class="text-3xl font-bold text-green-600 my-4 text-center">Cannabis Strain Explorer 🌿</h1>
-  <p class="text-center max-w-md mb-6">Enter a cannabis strain name below to explore detailed insights about its category, effects, and more.</p>
+  <p class="text-center max-w-md mb-6">Enter a cannabis strain name below to test the parsed data and optional genetics information.</p>
+  
+  <!-- Input for cannabis strain name -->
   <div class="w-full max-w-md">
 	<input id="strainInput" type="text" placeholder="Enter strain name (e.g., Durban Poison)"
 	  class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400"
 	  onkeydown="handleKeyPress(event)">
-	<button onclick="submitPrompt()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition">
-	  Search
-	</button>
   </div>
+
+  <!-- Optional input for genetic information -->
+  <div class="w-full max-w-md">
+	<input id="geneticsInput" type="text" placeholder="Enter genetic info (optional)"
+	  class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400">
+  </div>
+
+  <button onclick="submitPrompt()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition">
+	Search
+  </button>
+  
+  <!-- Display full raw response -->
   <div id="response" class="w-full max-w-md bg-white shadow-lg rounded-lg p-6 mt-6"></div>
+  
+  <!-- Display parsed data -->
   <div id="parsed-data" class="w-full max-w-md mt-6"></div>
 </body>
 </html>
