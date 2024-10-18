@@ -10,27 +10,25 @@
 	async function submitPrompt() {
 	  const inputField = document.getElementById('strainInput').value.trim();
 	  const geneticsField = document.getElementById('geneticsInput').value.trim(); // New genetics input
+	  const toneField = document.getElementById('toneSelect').value; // Get selected tone
 
 	  if (!inputField) {
 		alert('Please enter a strain name! 🌿');
 		return;
 	  }
 
-	  // Construct the prompt
-	  let prompt = `Provide detailed information about the cannabis strain, ${inputField}, including:
-
-	  {
-		"popularity": "...",
-		"genetics": "...",
-		"category": "...",
-		"category_percentage": {"indica": "...", "sativa": "..."},
-		"effects": [{"emoji": "...", "description": "..."}, ...],
-		"terpenes": [...],
-		"notes": [...],
-		"description": "...",
-		"alternative_names": [...],
-		"confidence": "..."
-	  }`;
+	  // Construct the prompt with detailed instructions for each data point
+	  let prompt = `Provide detailed information about the cannabis strain, ${inputField}. Include the following fields:
+	  - Popularity: How widely known and used is this strain? Include specific regions where it's most popular, if relevant.
+	  - Genetics: Describe the lineage and heritage of the strain, including any crossbreeding with other strains. If possible, include parent strains.
+	  - Category: Is the strain classified as Indica, Sativa, or Hybrid?
+	  - Category Percentage: Provide the exact breakdown of the strain's Indica and Sativa percentages.
+	  - Effects: List the common effects users experience with this strain, including both positive and negative effects, with emoji representations.
+	  - Terpenes: Describe the main terpenes present in the strain and how they influence its flavor, smell, and potential effects.
+	  - Notes: Mention any notable aspects of the strain, such as growing conditions, unique features, or special cultivation notes.
+	  - Description: Provide a general description of the strain, its characteristics, and its usage. Write this in the tone of ${toneField}.
+	  - Alternative Names: List any alternative or street names this strain is known by.
+	  - Confidence Score: Rate the confidence level in the accuracy of the provided information.`;
 
 	  // If user provided genetics information, add it to the prompt
 	  if (geneticsField) {
@@ -66,21 +64,33 @@
 
 	// Function to parse the response
 	function parseResponse(responseText) {
-	  try {
-		// Assuming responseText is a JSON-like string
-		const parsedData = JSON.parse(responseText);
+	  const parsedData = {
+		popularity: extractSection(responseText, 'Popularity'),
+		genetics: extractSection(responseText, 'Genetics'),
+		category: extractSection(responseText, 'Category'),
+		category_percentage: extractSection(responseText, 'Category Percentage'),
+		effects: extractSection(responseText, 'Effects'),
+		terpenes: extractSection(responseText, 'Terpenes'),
+		notes: extractSection(responseText, 'Notes'),
+		description: extractSection(responseText, 'Description'),
+		alternative_names: extractSection(responseText, 'Alternative Names'),
+		confidence: extractSection(responseText, 'Confidence Score')
+	  };
 
-		console.log("🛠️ Parsed Data:", parsedData);
-		return parsedData;
-	  } catch (error) {
-		console.error("❌ Error parsing the response:", error);
-		return { error: "Error parsing the data." };
-	  }
+	  return parsedData;
+	}
+
+	// Utility function to extract sections from the text
+	function extractSection(text, sectionName) {
+	  const regex = new RegExp(`\\*\\*${sectionName}\\*\\*[:\\s]*(.*?)(?=\\n\\-|$)`, 'i');
+	  const match = text.match(regex);
+	  return match ? match[1].trim() : 'N/A';
 	}
 
 	// Function to display the parsed data on the page
 	function displayParsedData(parsedData) {
 	  const parsedDiv = document.getElementById('parsed-data');
+
 	  if (parsedData.error) {
 		parsedDiv.innerHTML = `<p class="text-red-500">${parsedData.error}</p>`;
 		return;
@@ -91,13 +101,12 @@
 		<p><span class="font-semibold">Popularity:</span> ${parsedData.popularity}</p>
 		<p><span class="font-semibold">Genetics:</span> ${parsedData.genetics}</p>
 		<p><span class="font-semibold">Category:</span> ${parsedData.category}</p>
-		<p><span class="font-semibold">Indica Percentage:</span> ${parsedData.category_percentage.indica}%</p>
-		<p><span class="font-semibold">Sativa Percentage:</span> ${parsedData.category_percentage.sativa}%</p>
-		<p><span class="font-semibold">Effects:</span><br>${parsedData.effects.map(effect => `${effect.emoji} ${effect.description}`).join('<br>')}</p>
-		<p><span class="font-semibold">Terpenes:</span> ${parsedData.terpenes.join(', ')}</p>
-		<p><span class="font-semibold">Notes:</span> ${parsedData.notes.join(', ')}</p>
+		<p><span class="font-semibold">Category Percentage:</span> ${parsedData.category_percentage}</p>
+		<p><span class="font-semibold">Effects:</span> ${parsedData.effects}</p>
+		<p><span class="font-semibold">Terpenes:</span> ${parsedData.terpenes}</p>
+		<p><span class="font-semibold">Notes:</span> ${parsedData.notes}</p>
 		<p><span class="font-semibold">Description:</span> ${parsedData.description}</p>
-		<p><span class="font-semibold">Alternative Names:</span> ${parsedData.alternative_names.join(', ')}</p>
+		<p><span class="font-semibold">Alternative Names:</span> ${parsedData.alternative_names}</p>
 		<p><span class="font-semibold">Confidence Score:</span> ${parsedData.confidence}</p>`;
 	}
 
@@ -113,7 +122,7 @@
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col items-center p-4">
   <h1 class="text-3xl font-bold text-green-600 my-4 text-center">Cannabis Strain Explorer 🌿</h1>
   <p class="text-center max-w-md mb-6">Enter a cannabis strain name below to test the parsed data and optional genetics information.</p>
-  
+
   <!-- Input for cannabis strain name -->
   <div class="w-full max-w-md">
 	<input id="strainInput" type="text" placeholder="Enter strain name (e.g., Durban Poison)"
@@ -127,13 +136,23 @@
 	  class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-400">
   </div>
 
+  <!-- Tone selection dropdown -->
+  <div class="w-full max-w-md mb-4">
+	<select id="toneSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400">
+	  <option value="Cheech and Chong">Cheech and Chong</option>
+	  <option value="Snoop Dog">Snoop Dog</option>
+	  <option value="Hipster Home Grower">Hipster Home Grower</option>
+	  <option value="Valley Girl">Valley Girl</option>
+	</select>
+  </div>
+
   <button onclick="submitPrompt()" class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition">
 	Search
   </button>
-  
+
   <!-- Display full raw response -->
   <div id="response" class="w-full max-w-md bg-white shadow-lg rounded-lg p-6 mt-6"></div>
-  
+
   <!-- Display parsed data -->
   <div id="parsed-data" class="w-full max-w-md mt-6"></div>
 </body>
